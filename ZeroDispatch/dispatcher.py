@@ -27,6 +27,7 @@ class Dispatcher(object):
             self.workers.add(worker)
             worker.start()
 
+
     def __del__(self):
         for worker in self.workers:
             worker.terminate()
@@ -37,7 +38,14 @@ class Dispatcher(object):
         self.result_receiver.close()
 
 
-    def dispatch(self, func, *args, **kwargs):
+    def dispatch(self, func):
+        def wrapper(*args, **kwargs):
+            self._dispatch(func, *args, **kwargs)
+        return wrapper
+
+
+
+    def _dispatch(self, func, *args, **kwargs):
         self.task_id += 1
 
         task_dict = {}
@@ -54,21 +62,31 @@ class Dispatcher(object):
             raise Exception
 
 
+
+
+##########
+## TEST ##
+##########
+
+d = Dispatcher()
+
+@d.dispatch
 def squarer(a):
     from time import sleep
     return a ** 2
+
 
 if __name__ == '__main__':
     from time import sleep
     from pprint import pprint
 
-    d = Dispatcher()
     for i in xrange(10000):
-        d.dispatch(squarer, i)
+        print i
+        squarer(i)
 
     results = []
     while len(results) < 10000:
         message = d.result_receiver.recv_pyobj()
         results.append(message)
-        # pprint(message)
+        pprint(message)
 
