@@ -4,6 +4,8 @@ from functools import wraps
 
 import zmq
 
+from worker import Worker
+
 
 class Dispatcher(object):
     def __init__(self):
@@ -18,7 +20,22 @@ class Dispatcher(object):
         self.result_receiver = self.context.socket(zmq.PULL)
         self.result_receiver.bind('tcp://*:9003')
 
+        cpu_core_count = multiprocessing.cpu_count()
         self.workers = set([])
+        for i in xrange(cpu_core_count):
+            worker = multiprocessing.Process(target=Worker)
+            self.workers.add(worker)
+            worker.start()
+
+    def __del__(self):
+        for worker in self.workers:
+            worker.terminate()
+            worker.join()
+
+        self.sender.close()
+        self.ack_receiver.close()
+        self.result_receiver.close()
+
 
     def dispatch(self, func, *args, **kwargs):
         self.task_id += 1
@@ -49,10 +66,9 @@ if __name__ == '__main__':
     for i in xrange(10000):
         d.dispatch(squarer, i)
 
-    results = set([])
+    results = []
     while len(results) < 10000:
         message = d.result_receiver.recv_pyobj()
-        results.add(message)
-        pprint(message)
-        
+        results.append(message)
+        # pprint(message)
 

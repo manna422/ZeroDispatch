@@ -8,7 +8,8 @@ from pprint import pprint
 import zmq
 
 class Worker(object):
-    def __init__(self):
+    def __init__(self, debug=False):
+        self.debug = debug
         self.pid = os.getpid()
         context = zmq.Context()
         receiver = context.socket(zmq.PULL)
@@ -27,7 +28,7 @@ class Worker(object):
             ack_message = {
                 'message': 'ack',
                 'worker':self.pid,
-                'time':datetime.now(),
+                'time':str(datetime.now()),
                 'task_id':received['task_id']
             }
             ack_sender.send_pyobj(ack_message)
@@ -49,10 +50,13 @@ class Worker(object):
                 'message': 'result',
                 'worker':self.pid,
                 'task_id':received['task_id'],
-                'time':datetime.now(),
+                'time':str(datetime.now()),
                 'result':result
             }
-            pprint(result_message)
+
+            if self.debug:
+                pprint(result_message)
+
             result_sender.send_pyobj(result_message)
 
 
