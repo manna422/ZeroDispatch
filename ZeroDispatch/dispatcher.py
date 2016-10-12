@@ -4,7 +4,7 @@ from functools import wraps
 
 import zmq
 
-from worker import Worker
+from ZeroDispatch.worker import Worker
 
 
 class Dispatcher(object):
@@ -38,7 +38,7 @@ class Dispatcher(object):
         self.result_receiver.close()
 
 
-    def dispatch(self, func):
+    def run_dispatch(self, func):
         def wrapper(*args, **kwargs):
             self._dispatch(func, *args, **kwargs)
         return wrapper
@@ -60,33 +60,4 @@ class Dispatcher(object):
         if (response['task_id'] != self.task_id
             and response['message'] != 'ack'):
             raise Exception
-
-
-
-
-##########
-## TEST ##
-##########
-
-d = Dispatcher()
-
-@d.dispatch
-def squarer(a):
-    from time import sleep
-    return a ** 2
-
-
-if __name__ == '__main__':
-    from time import sleep
-    from pprint import pprint
-
-    for i in xrange(10000):
-        print i
-        squarer(i)
-
-    results = []
-    while len(results) < 10000:
-        message = d.result_receiver.recv_pyobj()
-        results.append(message)
-        pprint(message)
 
