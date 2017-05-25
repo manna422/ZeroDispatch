@@ -24,6 +24,7 @@ class Dispatcher(object):
         self.workers = set([])
         for i in xrange(cpu_core_count):
             worker = multiprocessing.Process(target=Worker)
+            worker.daemon = True
             self.workers.add(worker)
             worker.start()
 
